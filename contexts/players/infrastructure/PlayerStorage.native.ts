@@ -1,7 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Player } from "../domain/Player";
+import { PlayerStorage as IPlayerStorage } from "../domain/PlayerStorage";
 
-class PlayerStorage implements PlayerStorage {
+class PlayerStorage implements IPlayerStorage {
   static instance: PlayerStorage;
 
   static getInstance() {
@@ -25,6 +26,15 @@ class PlayerStorage implements PlayerStorage {
     return AsyncStorage.setItem(
       'players',
       JSON.stringify(players.map(p => p.toJson()))
+    );
+  }
+
+  async remove(name: string): Promise<void> {
+    const players = await this.getAll();
+    const filteredPlayers = players.filter(player => player.name !== name);
+    return AsyncStorage.setItem(
+      'players',
+      JSON.stringify(filteredPlayers.map(p => p.toJson()))
     );
   }
 }

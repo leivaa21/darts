@@ -3,14 +3,26 @@
   "compilerOptions": {
     "strict": true,
     "moduleResolution": "bundler",
-    "moduleSuffixes": [".native", ".ios", ".android", ".web", ""],
+    "moduleSuffixes": [
+      ".native",
+      ".ios",
+      ".android",
+      ".web",
+      ""
+    ],
     "skipLibCheck": true,
     "jsx": "react-jsx",
     "target": "ES2021",
-    "lib": ["ES2021", "DOM"],
+    "lib": [
+      "ES2021",
+      "DOM"
+    ],
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "tailwind.config": [
+        "./tailwind.config.js"
       ]
     }
   },
@@ -18,6 +30,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "expo-env.d.ts",
+    "nativewind-env.d.ts"
   ]
 }

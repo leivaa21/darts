@@ -1,18 +1,22 @@
 export class Player {
   constructor(
-    public readonly id: string,
-    public name: string,
+    public readonly name: string,
+    public readonly wins: number,
   ) {}
 
 
-  static fromJson(json: {id: string, name: string}) {
-    return new Player(json.id, json.name);
+  public static create({name}: {name: string}) {
+    return new Player(name, 0);
+  }
+
+  static fromJson(json: {name: string, wins: number}) {
+    return new Player(json.name, json.wins);
   }
 
   toJson() {
     return {
-      id: this.id,
       name: this.name,
+      wins: this.wins,
     }
   }
 }

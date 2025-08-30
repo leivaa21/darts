@@ -17,5 +17,9 @@ export function usePlayers() {
     playerStorage.save(player).then(reload);
   }
 
-  return { players, addPlayer, reloadPlayers: reload}
+  const removePlayer = (id: string) => {
+    playerStorage.remove(id).then(reload);
+  }
+
+  return { players, addPlayer, removePlayer, reloadPlayers: reload}
 }
