@@ -18,11 +18,11 @@ export class Game {
   constructor(
     public readonly type: Type,
     public readonly finishCondition: FinishCondition,
-    public readonly players: {name: string, finished: boolean}[],
+    public readonly players: string[],
     public readonly rounds: Map<string, number | null>[],
     public readonly nRounds: number | null = null,
     public concluded: boolean,
-    public readonly leaderboard: Map<string, number>,
+    public readonly leaderboard: Map<string, {score: number, finished: boolean}>,
   ) {}
 
 
@@ -35,13 +35,13 @@ export class Game {
     nRounds?: number | null;
   }) {
 
-    const leaderboard = new Map<string, number>();
-    players.forEach(player => leaderboard.set(player, 0));
+    const leaderboard = new Map<string, {score: number, finished: boolean}>();
+    players.forEach(player => leaderboard.set(player, {score: 0, finished: false}));
 
     return new Game(
       type,
       finishCondition,
-      players.map(p => ({name: p, finished: false})),
+      players,
       new Array<Map<string, number>>(),
       nRounds,
       false,
@@ -51,19 +51,19 @@ export class Game {
 
   public currentTurn(): string {
     if (this.concluded) {
-      return this.players[0].name;
+      return this.players[0];
     }
 
     if (this.rounds.length === 0) {
       this.addNewRound();
-      return this.players[0].name;
+      return this.players[0];
     }
 
     const remainings = this.getRemainings();
 
     if(remainings.length === 0) {
       this.addNewRound();
-      return this.players[0].name;
+      return this.currentTurn();
     }
 
     return remainings[0][0];
@@ -73,8 +73,8 @@ export class Game {
     return this.rounds.length;
   }
 
-  public getCurrentScore(player: string) {
-    return this.leaderboard.get(player) ?? 0;
+  public getCurrentScore(player: string): number {
+    return this.leaderboard.get(player)?.score ?? 0;
   }
 
   public hasAimedScore(): boolean {
@@ -100,9 +100,8 @@ export class Game {
       case Type.Rounds:
         const isLastRound = this.rounds.length === this.nRounds;
         if(!isLastRound) return false;
-  
-        const remainings = this.getRemainings();
-        const everyOneFinished = remainings.length === 0;
+        const countOfPlayersNotFinished = Array.from(this.leaderboard.values()).filter(({finished}) => !finished).length;
+        const everyOneFinished = countOfPlayersNotFinished === 0;
         return everyOneFinished;
       case Type.Free:
         return false;
@@ -110,25 +109,54 @@ export class Game {
         return false;
       default:
         const countOfPlayersThatShouldHaveFinished = this.finishCondition === FinishCondition.ClosePodium ? 3 : 1;
-        const countOfPlayersThatFinished = Array.from(this.leaderboard.values()).filter(score => score === this.aimedScore).length;
+        const countOfPlayersThatFinished = Array.from(this.leaderboard.values()).filter(({finished}) => finished).length;
         return countOfPlayersThatFinished === countOfPlayersThatShouldHaveFinished;
     }
   }
 
   public makePlayerTurn(player: string, score: number) {
     this.rounds[this.rounds.length - 1].set(player, score);
-    const currentPlayerScore = this.leaderboard.get(player)!;
-    this.leaderboard.set(player, currentPlayerScore + score);
+    const {score: currentPlayerScore} = this.leaderboard.get(player)!;
+    this.leaderboard.set(player, {score: currentPlayerScore + score, finished: false});
 
+    this.checkIfPlayerFinished(player);
     if(this.checkIfFinished()) {
       this.concluded = true;
     }
   }
 
+  private checkIfPlayerFinished(player: string): void {
+    const {score} = this.leaderboard.get(player)!;
+
+    switch(this.type) {
+      case Type.Rounds:
+        const isLastRound = this.rounds.length === this.nRounds;
+        if(!isLastRound) return;
+        break;
+      case Type.Free:
+        return;
+      case Type.Cricket:
+        return;
+      default:
+        if(score !== this.aimedScore) return;
+        break;
+    }
+
+    this.leaderboard.set(player, {score, finished: true});
+  }
+
   private addNewRound() {
     const newRound = new Map<string, number|null>();
-    this.players.filter(player => !player.finished).forEach(player => {
-      newRound.set(player.name, null);
+    const playersThatAlreadyFinished = Array
+      .from(this.leaderboard.entries())
+      .filter(([_player, {finished}]) => finished)
+      .map(([player]) => player);
+
+
+    this.players.forEach(player => {
+      if(!playersThatAlreadyFinished.includes(player)) {
+        newRound.set(player, null);
+      }
     });
     
     this.rounds.push(newRound);
@@ -143,11 +171,11 @@ export class Game {
     id: string,
     type: string,
     finishCondition: string,
-    players: {name: string, finished: boolean}[],
+    players: string[],
     rounds: {[user: string]: number}[],
     nRounds: number | null,
     concluded: boolean,
-    leaderboard: {[user: string]: number}
+    leaderboard: {[user: string]: {score: number, finished: boolean}}
   }) {
     const rounds = json.rounds.map(r => {
       const roundPoints = new Map<string, number>();
@@ -157,9 +185,9 @@ export class Game {
       return roundPoints;
     });
 
-    const leaderboard = new Map<string, number>();
-    Object.entries(json.leaderboard).forEach(([user, points]) => {
-      leaderboard.set(user, points);
+    const leaderboard = new Map<string, {score: number, finished: boolean}>();
+    Object.entries(json.leaderboard).forEach(([user, data]) => {
+      leaderboard.set(user, data);
     })
     
     return new Game(

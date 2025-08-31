@@ -13,7 +13,7 @@ export function MatchTurn({game, updateCurrentGame}:{game: Game, updateCurrentGa
 
   useEffect(() => {
     const currentPlayer = game.currentTurn();
-    setPlayer(game.currentTurn());
+    setPlayer(currentPlayer);
     setCurrentScore(game.getCurrentScore(currentPlayer));
     if(game.hasAimedScore()) {
       setAimedScore(game.aimedScore);
