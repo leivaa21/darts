@@ -22,7 +22,7 @@ export class Game {
     public readonly rounds: Map<string, number | null>[],
     public readonly nRounds: number | null = null,
     public concluded: boolean,
-    public readonly leaderboard: Map<string, {score: number, finished: boolean}>,
+    public readonly leaderboard: Map<string, {score: number, finished: boolean, fixedPosition?: number}>,
   ) {}
 
 
@@ -127,7 +127,7 @@ export class Game {
 
   private checkIfPlayerFinished(player: string): void {
     const {score} = this.leaderboard.get(player)!;
-
+    let fixedPosition: number | undefined = undefined
     switch(this.type) {
       case Type.Rounds:
         const isLastRound = this.rounds.length === this.nRounds;
@@ -142,7 +142,28 @@ export class Game {
         break;
     }
 
-    this.leaderboard.set(player, {score, finished: true});
+    if(this.finishCondition === FinishCondition.ClosePodium) {
+      fixedPosition = Array.from(this.leaderboard.values()).filter(({finished}) => finished).length + 1;
+    }
+    this.leaderboard.set(player, {score, finished: true, fixedPosition});
+  }
+
+
+  public get orderedLeaderboard() {
+    const leaderboardEntries = Array.from(this.leaderboard.entries());
+    if(this.finishCondition !== FinishCondition.ClosePodium) {
+      return new Map(leaderboardEntries.sort(
+        (a, b) => b[1].score - a[1].score
+      ));
+    }
+
+    const nonFixedPositions = leaderboardEntries.filter(([_player, {fixedPosition}]) => fixedPosition === undefined); 
+    const fixedPositions = leaderboardEntries
+      .filter(([_player, {fixedPosition}]) => fixedPosition !== undefined)
+      .sort((a, b) => a[1].fixedPosition! - b[1].fixedPosition!); 
+
+    
+    return new Map([...fixedPositions, ...nonFixedPositions]);
   }
 
   private addNewRound() {

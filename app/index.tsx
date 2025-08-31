@@ -39,7 +39,7 @@ export default function HomeScreen() {
           <Text style={styles.title}>
             Partida terminada! 🎯
           </Text>
-          <PlayerLeaderboard leaderboard={game.leaderboard}/>
+          <PlayerLeaderboard leaderboard={game.orderedLeaderboard}/>
           <Button onPress={() => {removeGame();reloadGame();}} style={{backgroundColor: Colors.primary, margin: 10, height: 50}}>
             <ButtonText><RefreshCwIcon /></ButtonText>
             <ButtonText style={{flexDirection: 'row'}}>Comenzar una nueva partida</ButtonText>

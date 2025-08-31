@@ -54,7 +54,7 @@ export default function Game() {
       <VStack style={styles.header}>
         <Heading style={{marginTop: 20, color: Colors.text}}>{GameTypeTranslations[game.type]}</Heading>
       </VStack>
-      <PlayerLeaderboard leaderboard={game.leaderboard}/>
+      <PlayerLeaderboard leaderboard={game.orderedLeaderboard}/>
       <MatchTurn game={game} updateCurrentGame={updateCurrentGame} />
       <Text></Text>
     </View>

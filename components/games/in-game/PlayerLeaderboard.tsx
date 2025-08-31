@@ -6,11 +6,7 @@ import { ScrollView } from "react-native";
 export function PlayerLeaderboard({leaderboard}:{leaderboard: Map<string, {score: number, finished: boolean}>}) {
 
   const sorted = useMemo(
-    () =>
-      Array.from(leaderboard.entries()).sort(
-        (a, b) => b[1].score - a[1].score
-      ),
-    [leaderboard]
+    () => Array.from(leaderboard.entries()), [leaderboard]
   );
 
   return (
