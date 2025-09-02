@@ -1,3 +1,23 @@
+# Darts
+
+Darts is my first mobile app, just to have some fun with friends when you dont have a digital scoring dart board.
+Use your phone to quickly keep track of your scores without having to spend time calculating.
+
+> ⚠️ This project is still in development, is it usable but not all modes are finished yet, feel free to contribute if you want.
+
+
+<div align="center">
+   <a href="https://github.com/leivaa21/darts/blob/master/LICENSE">
+     <img 
+         src="https://img.shields.io/badge/license%20-MIT-success?style=for-the-badge"
+         alt="MIT Licensed project"
+      />
+   </a>
+</div>
+
+<details>
+<summary>Expo framework Readme</summary>
+
 # Welcome to your Expo app 👋
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
@@ -48,8 +68,4 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
-
-
-
-### PALETE
-https://coolors.co/1db954-212121-121212-d11919-ececec
+</details>
