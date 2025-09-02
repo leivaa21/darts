@@ -10,3 +10,6 @@ export const Colors = {
   secondaryBackground: "#212121",
   text: "#ECECEC"
 };
+
+// Used pallete 
+// https://coolors.co/1db954-212121-121212-d11919-ececec
