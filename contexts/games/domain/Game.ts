@@ -28,6 +28,9 @@ export interface CricketGamePlayerData {
   touches: Record<CricketScorePositions, number>;
 }
 
+type ScoringGameLeaderboard = Map<string, ScoringGamePlayerData>;
+type CricketGameLeaderboard = Map<string, CricketGamePlayerData>;
+
 export class Game {
   constructor(
     public readonly type: Type,
@@ -36,7 +39,7 @@ export class Game {
     public readonly rounds: Map<string, number | null>[],
     public readonly nRounds: number | null = null,
     public concluded: boolean,
-    private readonly _leaderboard: Map<string, ScoringGamePlayerData | CricketGamePlayerData>,
+    private readonly _leaderboard: ScoringGameLeaderboard | CricketGameLeaderboard,
   ) {}
 
 
@@ -49,8 +52,10 @@ export class Game {
     nRounds?: number | null;
   }) {
 
-    const leaderboard = new Map<string, {score: number, finished: boolean}>();
-    players.forEach(player => leaderboard.set(player, {score: 0, finished: false}));
+    const leaderboard = 
+      type === Type.Cricket 
+        ? this.mountCricketLeaderboard(players) 
+        : this.mountScoreLeaderboard(players);
 
     return new Game(
       type,
@@ -63,13 +68,33 @@ export class Game {
     );
   }
 
+  private static mountScoreLeaderboard(players: string[]) {
+    const leaderboard = new Map<string, ScoringGamePlayerData>();
+    players.forEach(player => leaderboard.set(player, {score: 0, finished: false}));
+    return leaderboard;
+  }
+
+  private static mountCricketLeaderboard(players: string[]) {
+    const leaderboard = new Map<string, CricketGamePlayerData>();
+    const touches = {
+      15: 0,
+      16: 0,
+      17: 0,
+      18: 0,
+      19: 0,
+      20: 0,
+      25: 0,
+    }
+    players.forEach(player => leaderboard.set(player, {score: 0, touches}));
+    return leaderboard;
+  }
+
   public get leaderboard() {
-    if(this.type === Type.Cricket) throw new Error("Invalid leaderboard for cricket game");
+    if(this.type === Type.Cricket) return this.cricketLeaderboard;
     return this._leaderboard as Map<string, ScoringGamePlayerData>;
   }
 
   public get cricketLeaderboard() {
-    if(this.type !== Type.Cricket) throw new Error("Invalid leaderboard for this game");
     return this._leaderboard as Map<string, CricketGamePlayerData>;
   }
 
@@ -124,7 +149,7 @@ export class Game {
       case Type.Rounds:
         const isLastRound = this.rounds.length === this.nRounds;
         if(!isLastRound) return false;
-        const countOfPlayersNotFinished = Array.from(this.leaderboard.values()).filter(({finished}) => !finished).length;
+        const countOfPlayersNotFinished = Array.from((this.leaderboard as ScoringGameLeaderboard).values()).filter(({finished}) => !finished).length;
         const everyOneFinished = countOfPlayersNotFinished === 0;
         return everyOneFinished;
       case Type.Free:
@@ -133,7 +158,7 @@ export class Game {
         return false;
       default:
         const countOfPlayersThatShouldHaveFinished = this.finishCondition === FinishCondition.ClosePodium ? 3 : 1;
-        const countOfPlayersThatFinished = Array.from(this.leaderboard.values()).filter(({finished}) => finished).length;
+        const countOfPlayersThatFinished = Array.from((this.leaderboard as ScoringGameLeaderboard).values()).filter(({finished}) => finished).length;
         return countOfPlayersThatFinished === countOfPlayersThatShouldHaveFinished;
     }
   }
@@ -141,7 +166,7 @@ export class Game {
   public makePlayerTurn(player: string, score: number) {
     this.rounds[this.rounds.length - 1].set(player, score);
     const {score: currentPlayerScore} = this.leaderboard.get(player)!;
-    this.leaderboard.set(player, {score: currentPlayerScore + score, finished: false});
+    (this._leaderboard as ScoringGameLeaderboard).set(player, {score: currentPlayerScore + score, finished: false});
 
     this.checkIfPlayerFinished(player);
     if(this.checkIfFinished()) {
@@ -149,17 +174,16 @@ export class Game {
     }
   }
 
-  public makePlayerCricketTurn(player: string, shots: number[]) {
-    const relevantShots = shots.filter(n => n >= 15) as CricketScorePositions[];
-
+  public makePlayerCricketShot(player: string, shot: CricketScorePositions) {
+    if (shot < 15) return;
+    
     const playerData = this.cricketLeaderboard.get(player)!;
 
-    relevantShots.forEach((value) => {
-      if(playerData.touches[value] >= 3 && !this.numberIsClosed(value)) {
-        playerData.score += value;
-      }
-      playerData.touches[value]++;
-    });
+    if(playerData.touches[shot] >= 3 && !this.numberIsClosed(shot)) {
+      playerData.score += shot;
+    }
+    
+    playerData.touches[shot]++;
 
     if(this.checkIfFinished()) {
       this.concluded = true;
@@ -191,14 +215,14 @@ export class Game {
     }
 
     if(this.finishCondition === FinishCondition.ClosePodium) {
-      fixedPosition = Array.from(this.leaderboard.values()).filter(({finished}) => finished).length + 1;
+      fixedPosition = Array.from((this.leaderboard as ScoringGameLeaderboard).values()).filter(({finished}) => finished).length + 1;
     }
-    this.leaderboard.set(player, {score, finished: true, fixedPosition});
+    (this._leaderboard as ScoringGameLeaderboard).set(player, {score, finished: true, fixedPosition});
   }
 
 
   public get orderedLeaderboard() {
-    const leaderboardEntries = Array.from(this.leaderboard.entries());
+    const leaderboardEntries = Array.from((this.leaderboard as ScoringGameLeaderboard).entries());
     if(this.finishCondition !== FinishCondition.ClosePodium) {
       return new Map(leaderboardEntries.sort(
         (a, b) => b[1].score - a[1].score
@@ -217,7 +241,7 @@ export class Game {
   private addNewRound() {
     const newRound = new Map<string, number|null>();
     const playersThatAlreadyFinished = Array
-      .from(this.leaderboard.entries())
+      .from((this.leaderboard as ScoringGameLeaderboard).entries())
       .filter(([_player, {finished}]) => finished)
       .map(([player]) => player);
 
