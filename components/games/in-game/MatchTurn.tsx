@@ -1,5 +1,5 @@
 import { Heading } from "@/components/ui/heading";
-import { Game, Type } from "@/contexts/games/domain/Game";
+import { Game } from "@/contexts/games/domain/Game";
 import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { View } from "react-native";
@@ -28,15 +28,6 @@ export function MatchTurn({game, updateCurrentGame}:{game: Game, updateCurrentGa
       router.navigate('/');
     }
   }, [game, player, updateCurrentGame]);
-
-  if(game.type === Type.Cricket) {
-    return (
-      <View>
-
-      </View>
-    )
-  }
-
 
   return (
     <View style={{justifyContent: 'center', flex: .7, width: '100%', maxWidth: 500, padding: 20}}>

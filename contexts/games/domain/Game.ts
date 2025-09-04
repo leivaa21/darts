@@ -12,6 +12,20 @@ export enum FinishCondition {
   ClosePodium = 'ClosePodium',
   FixedRounds = 'FixedRounds',
   Free = 'Free',
+  Cricket = 'Cricket',
+}
+
+export interface ScoringGamePlayerData {
+  score: number,
+  finished: boolean,
+  fixedPosition?: number
+}
+
+export type CricketScorePositions = 15 | 16 | 17 | 18 | 20 | 25;
+
+export interface CricketGamePlayerData {
+  score: number;
+  touches: Record<CricketScorePositions, number>;
 }
 
 export class Game {
@@ -22,7 +36,7 @@ export class Game {
     public readonly rounds: Map<string, number | null>[],
     public readonly nRounds: number | null = null,
     public concluded: boolean,
-    public readonly leaderboard: Map<string, {score: number, finished: boolean, fixedPosition?: number}>,
+    private readonly _leaderboard: Map<string, ScoringGamePlayerData | CricketGamePlayerData>,
   ) {}
 
 
@@ -47,6 +61,16 @@ export class Game {
       false,
       leaderboard,
     );
+  }
+
+  public get leaderboard() {
+    if(this.type === Type.Cricket) throw new Error("Invalid leaderboard for cricket game");
+    return this._leaderboard as Map<string, ScoringGamePlayerData>;
+  }
+
+  public get cricketLeaderboard() {
+    if(this.type !== Type.Cricket) throw new Error("Invalid leaderboard for this game");
+    return this._leaderboard as Map<string, CricketGamePlayerData>;
   }
 
   public currentTurn(): string {
@@ -123,6 +147,30 @@ export class Game {
     if(this.checkIfFinished()) {
       this.concluded = true;
     }
+  }
+
+  public makePlayerCricketTurn(player: string, shots: number[]) {
+    const relevantShots = shots.filter(n => n >= 15) as CricketScorePositions[];
+
+    const playerData = this.cricketLeaderboard.get(player)!;
+
+    relevantShots.forEach((value) => {
+      if(playerData.touches[value] >= 3 && !this.numberIsClosed(value)) {
+        playerData.score += value;
+      }
+      playerData.touches[value]++;
+    });
+
+    if(this.checkIfFinished()) {
+      this.concluded = true;
+    }
+  }
+
+  private numberIsClosed(value: CricketScorePositions) {
+    const playersData = Array.from(this.cricketLeaderboard.values());
+    const numberTouches = playersData.map(data => data.touches[value]).filter(count => count < 3);
+
+    return numberTouches.length === 0;
   }
 
   private checkIfPlayerFinished(player: string): void {
